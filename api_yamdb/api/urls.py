@@ -1,10 +1,13 @@
-from django.urls import path
+from django.urls import include, path
 
-from .views import SignUpView, TokenView
+from rest_framework.routers import SimpleRouter
+from .views import APISignup, APIGetToken, UsersViewSet
 
-app_name = 'api'
+router = SimpleRouter()
+router.register('users', UsersViewSet, basename='users')
 
 urlpatterns = [
-    path('v1/auth/signup/', SignUpView.as_view(), name='signup'),
-    path('v1/auth/token/', TokenView.as_view(), name='token'),
+    path('v1/auth/signup/', APISignup.as_view(), name='signup'),
+    path('v1/auth/token/', APIGetToken.as_view(), name='get_token'),
+    path('v1/', include(router.urls)),
 ]
