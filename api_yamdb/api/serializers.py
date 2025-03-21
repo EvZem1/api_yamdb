@@ -1,7 +1,64 @@
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
+from reviews.models import Category, Genre, Title, User
 from rest_framework import serializers
-from reviews.models import User, Title
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ['name', 'slug']
+        model = Genre
+
+
+class GenreSetSerializer(serializers.SlugRelatedField):
+    def to_representation(self, data):
+        serializer = GenreSerializer(data)
+        return serializer.data
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ['name', 'slug']
+        model = Category
+
+
+class CategorySetSerializer(serializers.SlugRelatedField):
+    def to_representation(self, data):
+        serializer = CategorySerializer(data)
+        return serializer.data
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    category = CategorySetSerializer(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        read_only=True,
+    )
+    genre = GenreSetSerializer(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True,
+        read_only=True,
+    )
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id',
+            'name',
+            'year',
+            'description',
+            'category',
+            'genre',
+        )
+
+    def to_representation(self, instance):
+        r = super().to_representation(instance)
+        req = self.context.get('request')
+        if req and req.method == 'GET':
+            r['rating'] = instance.rating
+        return r
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -36,19 +93,6 @@ class NotAdminSerializer(serializers.ModelSerializer):
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
         read_only_fields = ('role',)
-
-
-class TitleReadSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    genre = GenreSerializer(
-        read_only=True,
-        many=True
-    )
-    rating = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        fields = '__all__'
-        model = Title
 
 
 class ReviewSerializer(serializers.ModelSerializer):

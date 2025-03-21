@@ -1,10 +1,11 @@
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils.crypto import get_random_string
 
-from .validators import validate_username, validate_year
+from reviews.validators import validate_username, validate_year
 
 USER = 'user'
 ADMIN = 'admin'
@@ -78,23 +79,59 @@ def post_save(sender, instance, created, **kwargs):
         instance.save()
 
 
+class Category(models.Model):
+    name = models.CharField(
+        verbose_name='название',
+        max_length=256,
+    )
+
+    slug = models.SlugField(
+        verbose_name='идентификатор',
+        max_length=50,
+        unique=True,
+        db_index=True,
+    )
+
+    class Meta:
+        verbose_name = 'категория'
+        verbose_name_plural = 'категории'
+        ordering = ['name']
+        # abstract = True
+
+    def __str__(self):
+        return self.name[:30]
+
+
+class Genre(models.Model):
+    slug = models.SlugField(
+        verbose_name='идентификатор',
+        unique=True,
+        db_index=True,
+        max_length=50,
+    )
+
+    name = models.CharField(
+        verbose_name='название',
+        max_length=256,
+    )
+
+    class Meta:
+        verbose_name = 'жанр'
+        verbose_name_plural = 'жанры'
+        # abstract = True
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name[:30]
+
+
+
+
 class Title(models.Model):
     name = models.CharField(
-        'название',
-        max_length=200,
-        db_index=True
-    )
-    year = models.IntegerField(
-        'год',
-        validators=(validate_year, )
-    )
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.SET_NULL,
-        related_name='titles',
-        verbose_name='категория',
-        null=True,
-        blank=True
+        verbose_name='название',
+        db_index=True,
+        max_length=256,
     )
     description = models.TextField(
         'описание',
@@ -107,16 +144,35 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='жанр'
     )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        related_name='titles',
+
+        verbose_name='категория',
+        null=True,
+        blank=True
+    )
+
+    year = models.SmallIntegerField(
+        db_index=True,
+        validators=[validate_year],
+        verbose_name='год выхода',
+    )
+    
     rating = models.IntegerField(
         'рейтинг',
         null=True,
         blank=True,
         default=None
     )
-
     class Meta:
-        verbose_name = 'Произведение'
-        verbose_name_plural = 'Произведения'
+        verbose_name = 'произведение'
+        verbose_name_plural = 'произведения'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name[:30]
 
 
 class Review(models.Model):
@@ -160,7 +216,7 @@ class Review(models.Model):
         ordering = ('pub_date',)
 
     def __str__(self):
-        return self.text
+        return self.title[:30]
 
 
 @receiver([post_save, post_delete], sender=Review)
@@ -169,3 +225,4 @@ def update_title_rating(sender, instance, **kwargs):
     avg_rating = title.reviews.aggregate(models.Avg('score'))['score__avg']
     title.rating = round(avg_rating) if avg_rating else None
     title.save()
+
