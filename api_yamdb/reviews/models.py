@@ -1,5 +1,6 @@
 
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
@@ -72,6 +73,7 @@ class User(AbstractUser):
     def generate_confirmation_code(self):
         return get_random_string(length=32)
 
+
 @receiver(post_save, sender=User)
 def post_save(sender, instance, created, **kwargs):
     if created:
@@ -125,8 +127,6 @@ class Genre(models.Model):
         return self.name[:30]
 
 
-
-
 class Title(models.Model):
     name = models.CharField(
         verbose_name='название',
@@ -159,13 +159,14 @@ class Title(models.Model):
         validators=[validate_year],
         verbose_name='год выхода',
     )
-    
+
     rating = models.IntegerField(
         'рейтинг',
         null=True,
         blank=True,
         default=None
     )
+
     class Meta:
         verbose_name = 'произведение'
         verbose_name_plural = 'произведения'
@@ -225,4 +226,3 @@ def update_title_rating(sender, instance, **kwargs):
     avg_rating = title.reviews.aggregate(models.Avg('score'))['score__avg']
     title.rating = round(avg_rating) if avg_rating else None
     title.save()
-
