@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, pagination, permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status  # Import status явно
+from rest_framework import status
 from rest_framework_simplejwt.tokens import AccessToken
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -67,7 +67,8 @@ class TitleViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с отзывами."""
     serializer_class = serializers.ReviewSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                            IsAuthorOrReadOnly)
     pagination_class = pagination.LimitOffsetPagination
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
 
@@ -84,7 +85,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с комментариями."""
     serializer_class = serializers.CommentSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                            IsAuthorOrReadOnly)
     pagination_class = pagination.LimitOffsetPagination
     http_method_names = ('get', 'post', 'patch', 'delete', 'head', 'options')
 
