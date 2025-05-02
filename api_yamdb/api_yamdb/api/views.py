@@ -6,9 +6,10 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, pagination, permissions, response, status, views, viewsets
+from rest_framework import filters, mixins, pagination, permissions, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import status  # Import status явно
 from rest_framework_simplejwt.tokens import AccessToken
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -50,7 +51,6 @@ class GenreViewSet(CreateListDestroyViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с произведениями."""
     queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
-    serializer_class = serializers.TitleSerializer  # По умолчанию используем TitleWriteSerializer
     permission_classes = (IsAdminOrReadOnly,)
     pagination_class = pagination.LimitOffsetPagination
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)

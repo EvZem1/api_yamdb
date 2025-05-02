@@ -83,11 +83,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         fields = ['name', 'year', 'description', 'genre', 'category']
 
 
-class TitleSerializer(TitleWriteSerializer):
-    def to_representation(self, instance):
-        return TitleReadSerializer(instance).data
-
-
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
@@ -201,15 +196,13 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(
-                'Пользователь с таким email уже существует.'
-            )
+                'Пользователь с таким email уже существует.')
         return value
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError(
-                'Пользователь с таким username уже существует.'
-            )
+                'Пользователь с таким username уже существует.')
         if value in constants.BANNED_USERNAMES:
             raise serializers.ValidationError(
                 f'Использовать имя {value} в качестве username запрещено.')
