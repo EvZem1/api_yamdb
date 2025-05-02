@@ -15,7 +15,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from api import serializers
 from api.filters import TitleFilter
-from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly, AdminPermission, IsAdminOnly
+from api.permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly, IsAdminOnly
 from reviews.models import Category, Genre, Review, Title
 
 User = get_user_model()
@@ -169,7 +169,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(user)
             return response.Response(serializer.data)
         serializer = self.get_serializer(user, data=request.data,
-                                          partial=True)
+                                           partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return response.Response(serializer.data)

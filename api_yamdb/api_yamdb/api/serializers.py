@@ -13,7 +13,8 @@ User = get_user_model()
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
-        max_length=constants.EMAIL_LENGTH)
+        max_length=constants.EMAIL_LENGTH
+    )
     username = serializers.CharField(
         required=True,
         max_length=constants.USERNAME_LENGTH,
@@ -22,7 +23,8 @@ class SignUpSerializer(serializers.Serializer):
                 regex=constants.USERNAME_VALIDATOR,
                 message=(
                     'Имя пользователя может содержать только буквы, цифры и '
-                    'символы @/./+/-/_'),
+                    'символы @/./+/-/_'
+                ),
                 code='invalid_username'
             )
         ]
@@ -67,7 +69,8 @@ class SignUpSerializer(serializers.Serializer):
 class TokenSerializer(serializers.Serializer):
     username = serializers.CharField(
         required=True,
-        max_length=constants.USERNAME_LENGTH)
+        max_length=constants.USERNAME_LENGTH
+    )
     confirmation_code = serializers.CharField(required=True)
 
     def validate(self, attrs):
@@ -79,7 +82,8 @@ class TokenSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise NotFound(
                 detail={'username':
-                        'Пользователь с таким username не найден.'})
+                        'Пользователь с таким username не найден.'}
+            )
 
         if not user.is_confirmation_code_valid(confirmation_code):
             raise serializers.ValidationError(
@@ -172,31 +176,37 @@ class UserSerializer(serializers.ModelSerializer):
                 regex=constants.USERNAME_VALIDATOR,
                 message=(
                     'Имя пользователя может содержать только буквы, цифры и '
-                    'символы @/./+/-/_'),
+                    'символы @/./+/-/_'
+                ),
                 code='invalid_username'
             )
         ]
     )
-    email = serializers.EmailField(required=True,
-                                   max_length=constants.EMAIL_LENGTH)
+    email = serializers.EmailField(
+        required=True,
+        max_length=constants.EMAIL_LENGTH
+    )
 
     class Meta:
         model = User
-        fields = 'username', 'email', 'first_name', 'last_name', 'bio', 'role'
+        fields = ('username', 'email', 'first_name', 'last_name', 'bio', 'role')
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(
-                'Пользователь с таким email уже существует.')
+                'Пользователь с таким email уже существует.'
+            )
         return value
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError(
-                'Пользователь с таким username уже существует.')
+                'Пользователь с таким username уже существует.'
+            )
         if value in constants.BANNED_USERNAMES:
             raise serializers.ValidationError(
-                f'Использовать имя {value} в качестве username запрещено.')
+                f'Использовать имя {value} в качестве username запрещено.'
+            )
         return value
 
     def validate_role(self, value):
