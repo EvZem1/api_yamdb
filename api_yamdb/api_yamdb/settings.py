@@ -1,12 +1,15 @@
-from pathlib import Path
+import os
+from datetime import timedelta
 
-from decouple import config
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY')
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 
-DEBUG = False
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -126,14 +129,25 @@ STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
 # Email messages
 
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
+
+AUTH_USER_MODEL = 'reviews.User'
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-EMAIL_HOST = config('EMAIL_HOST')
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+}
 
-EMAIL_PORT = config('EMAIL_PORT', cast=int)
-
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
-
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
