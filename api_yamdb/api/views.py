@@ -6,7 +6,9 @@ from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import (filters, mixins, pagination, permissions, response,
+from rest_framework import (filters, mixins,
+                            pagination, permissions,
+                            response,
                             status, views, viewsets)
 from rest_framework.decorators import action
 
