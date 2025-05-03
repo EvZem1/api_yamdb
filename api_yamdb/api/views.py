@@ -1,79 +1,40 @@
-from random import randint
-
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import (filters, mixins,
-                            pagination, permissions,
-                            response,
-                            status, views, viewsets)
+from rest_framework import mixins, pagination, views, viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 
-from api import serializers
-from api.filters import TitleFilter
-from api.permissions import AdminPermission, IsAdminOnly, IsAuthorOrReadOnly
-from reviews.models import Category, Genre, Review, Title
+from reviews.models import Review
+from titles.models import Category, Genre, Title
+from users.models import User
+from users.permissions import (IsAdmin, IsAdminOrReadOnly,
+                               IsAuthorModeratorAdminOrReadOnly)
 
-User = get_user_model()
+from .filters import TitleFilter
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer, SignUpSerializer,
+                          TitleGETSerializer, TitleSerializer, TokenSerializer,
+                          UserSerializer)
 
 
-class CreateDestroyViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
-    filter_backends = (filters.SearchFilter,)
+class CDLViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
+                 mixins.ListModelMixin, GenericViewSet):
+    pass
+
+
+class CreateListDestroyViewSet(mixins.CreateModelMixin,
+                               mixins.ListModelMixin,
+                               mixins.DestroyModelMixin,
+                               viewsets.GenericViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = pagination.LimitOffsetPagination
+    filter_backends = (SearchFilter,)
     search_fields = ('name',)
-    permission_classes = [AdminPermission]
     lookup_field = 'slug'
-
-
-class SignUpView(views.APIView):
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request):
-        serializer = serializers.SignUpSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
-        user = serializer.save()
-        confirmation_code = str(randint(10000, 99999))
-        user.set_confirmation_code(confirmation_code)
-
-        send_mail(
-            subject='Код подтверждения API Yamdb',
-            message=(
-                f'Здравствуйте, {user.username}!\n'
-                'Если вы получили это письмо по ошибке, пожалуйста, '
-                'проигнорируйте его!\n'
-                f'Ваш код подтверждения: {confirmation_code}'
-            ),
-            from_email=settings.EMAIL_BASE,
-            recipient_list=[email],
-            fail_silently=True,
-        )
-
-        return response.Response(
-            serializer.validated_data, status=status.HTTP_200_OK
-        )
-
-
-class TokenView(views.APIView):
-    permission_classes = (permissions.AllowAny, )
-
-    def post(self, request):
-        serializer = serializers.TokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token = serializer.get_token(user)
-
-        return response.Response(
-            {"token": str(token.access_token)},
-            status=status.HTTP_200_OK
-        )
 
 
 class CategoryViewSet(CDLViewSet):
@@ -81,6 +42,15 @@ class CategoryViewSet(CDLViewSet):
     lookup_field = 'slug'
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('=name',)
+
+
+class GenreViewSet(CDLViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('=name',)
 
@@ -98,21 +68,16 @@ class TitleViewSet(ModelViewSet):
         return TitleWriteSerializer
 
 
-class GenreViewSet(CDLViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
-    lookup_field = 'slug'
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name',)
-
-
 class ReviewViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
-                          IsAuthorOrReadOnly]
-    pagination_class = pagination.LimitOffsetPagination
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    """ViewSet для работы с отзывами (Reviews)."""
+
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    serializer_class = ReviewSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAuthorModeratorAdminOrReadOnly)
+
+    def get_queryset(self):
+        return Review.objects.filter(title_id=self.kwargs['title_id'])
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs['title_id'])
@@ -121,17 +86,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = self.get_title()
         serializer.save(author=self.request.user, title=title)
 
-    def get_queryset(self):
-        title = self.get_title()
-        return title.reviews.all()
-
 
 class CommentViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
-                          IsAuthorOrReadOnly]
-    serializer_class = serializers.CommentSerializer
-    pagination_class = pagination.LimitOffsetPagination
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    """ViewSet для работы с комментариями к отзывам."""
+
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    serializer_class = CommentSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsAuthorModeratorAdminOrReadOnly)
 
     def get_review(self):
         return get_object_or_404(
@@ -140,36 +102,76 @@ class CommentViewSet(viewsets.ModelViewSet):
             title_id=self.kwargs['title_id']
         )
 
+    def get_queryset(self):
+        return self.get_review().comments.all()
+
     def perform_create(self, serializer):
         review = self.get_review()
         serializer.save(author=self.request.user, review=review)
 
-    def get_queryset(self):
-        review = self.get_review()
-        return review.comments.all()
+
+class TokenObtainView(APIView):
+    """Получение JWT токена по username и confirmation_code."""
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = TokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_instance = serializer.validated_data['user']
+        token = AccessToken.for_user(user_instance)
+        return Response(
+            {'token': str(token)},
+            status=status.HTTP_200_OK
+        )
+
+
+class SignUpView(APIView):
+    """Регистрация нового пользователя или получение confirmation_code."""
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = SignUpSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated, IsAdminOnly,)
-    pagination_class = pagination.LimitOffsetPagination
+    """ViewSet для управления пользователями (только для админов)."""
     queryset = User.objects.all()
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('^username',)
-    serializer_class = serializers.UserSerializer
+    serializer_class = UserSerializer
+    permission_classes = (IsAdmin,)
     lookup_field = 'username'
     http_method_names = ['get', 'post', 'patch', 'delete']
+    pagination_class = pagination.LimitOffsetPagination # Добавил пагинацию для пользователей
 
-    @action(detail=False, methods=['get', 'patch'], url_path='me',
-            permission_classes=[permissions.IsAuthenticated])
-    def me(self, request):
-        user = request.user
-        if request.method == 'GET':
-            serializer = self.get_serializer(user)
-            return response.Response(
-                serializer.data, status=status.HTTP_200_OK)
-        serializer = self.get_serializer(
-            user, data=request.data, partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return response.Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        """Добавляем возможность поиска по username."""
+        queryset = super().get_queryset()
+        search_term = self.request.query_params.get('search', None)
+        if search_term:
+            queryset = queryset.filter(username__icontains=search_term)
+        return queryset
+
+    @action(
+        detail=False,
+        methods=['get', 'patch'],
+        permission_classes=(IsAuthenticated,),
+        url_path='me',
+        url_name='users_me'
+    )
+    def me(self, request, *args, **kwargs):
+        """Получение и обновление данных своего профиля."""
+        current_user = request.user
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(
+                current_user,
+                data=request.data,
+                partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(role=current_user.role)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(current_user)
+        return Response(serializer.data, status=status.HTTP_200_OK)

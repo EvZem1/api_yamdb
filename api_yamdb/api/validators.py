@@ -1,17 +1,22 @@
-from datetime import datetime
+import datetime as dt
 
 from django.core.exceptions import ValidationError
 
-from api.constants import BANNED_USERNAMES
-
-
-def validate_username(value):
-    if value in BANNED_USERNAMES:
-        raise ValidationError(
-            f'Имя пользователя {value} недопустимо.')
+from api_yamdb.constants import MAX_SCORE, MIN_SCORE
 
 
 def validate_year(value):
-    current_year = datetime.now().year
-    if value > current_year:
-        raise ValidationError(f'Год не может быть больше {current_year}.')
+    if value > dt.date.today().year:
+        raise ValidationError(
+            'Год произведения не может быть больше текущего.'
+        )
+
+
+def validate_score_range(value):
+    is_valid = MIN_SCORE <= value <= MAX_SCORE
+    if not is_valid:
+        raise ValidationError(
+            'Оценка должна быть в диапазоне от'
+            f'{MIN_SCORE} до {MAX_SCORE}'
+        )
+    return value
