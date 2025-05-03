@@ -143,7 +143,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def validate_role(self, value):
-        if value not in dict(User.ROLE_CHOICES):
+        if value not in dict(UserRole.choices):
             raise serializers.ValidationError("Недопустимая роль")
         return value
 
