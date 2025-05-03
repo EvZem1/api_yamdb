@@ -9,7 +9,7 @@ from api.validators import validate_score_range, validate_year
 from api_yamdb import constants
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
-from users.models import User
+from users.models import User, UserRole
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -127,9 +127,9 @@ class TokenSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(
-        choices=User.ROLE_CHOICES,
+        choices=UserRole.choices,
         required=False,
-        default=User.USER
+        default=UserRole.USER
     )
 
     class Meta:
