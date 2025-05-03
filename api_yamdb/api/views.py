@@ -85,15 +85,6 @@ class CategoryViewSet(CDLViewSet):
     search_fields = ('=name',)
 
 
-class GenreViewSet(CDLViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
-    lookup_field = 'slug'
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('=name',)
-
-
 class TitleViewSet(ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     queryset = Title.objects.all().annotate(rating=Avg('reviews__score'))
@@ -105,6 +96,15 @@ class TitleViewSet(ModelViewSet):
         if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
         return TitleWriteSerializer
+
+
+class GenreViewSet(CDLViewSet):
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('=name',)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
