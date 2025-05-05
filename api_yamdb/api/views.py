@@ -1,34 +1,29 @@
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, pagination, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
+from rest_framework.permissions import (SAFE_METHODS, AllowAny,
+                                        IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from django_filters.rest_framework import DjangoFilterBackend
-
 from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from users.permissions import (IsAdmin, IsAdminOrReadOnly,
-                               IsAuthorModeratorAdminOrReadOnly)
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          IsAuthorModeratorAdminOrReadOnly)
+
 from .filters import TitleFilter
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer, ReviewSerializer,
-    SignUpSerializer, TokenSerializer, UserSerializer,
-    TitleGETSerializer, TitleSerializer
+    SignUpSerializer, TitleGETSerializer, TitleSerializer, TokenSerializer,
+    UserSerializer
 )
-
-
-class CDLViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin,
-                 mixins.ListModelMixin, GenericViewSet):
-    pass
 
 
 class CreateListDestroyViewSet(mixins.CreateModelMixin,
@@ -42,33 +37,27 @@ class CreateListDestroyViewSet(mixins.CreateModelMixin,
     lookup_field = 'slug'
 
 
-class CategoryViewSet(CDLViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
-    lookup_field = 'slug'
+class CategoryViewSet(CreateListDestroyViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    filter_backends = (SearchFilter,)
-    search_fields = ('=name',)
 
 
-class GenreViewSet(CDLViewSet):
-    permission_classes = (IsAdminOrReadOnly,)
-    lookup_field = 'slug'
+class GenreViewSet(CreateListDestroyViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    filter_backends = (SearchFilter,)
-    search_fields = ('=name',)
 
 
 class TitleViewSet(ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
-    queryset = Title.objects.all().annotate(rating=Avg('reviews__score')).all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).order_by('name')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
+        if self.request.method in SAFE_METHODS:
             return TitleGETSerializer
         return TitleSerializer
 
@@ -80,7 +69,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
                           IsAuthorModeratorAdminOrReadOnly)
 
     def get_queryset(self):
-        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
+        title = self.get_title()
         return title.reviews.all()
 
     def get_title(self):

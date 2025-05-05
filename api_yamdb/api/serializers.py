@@ -24,17 +24,15 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('title',)
 
     def validate(self, data):
         request = self.context['request']
         title_id = self.context['request'].parser_context['kwargs']['title_id']
 
         if request.method == 'POST':
-            if Review.objects.filter(
-                    author=request.user,
-                    title_id=title_id
-            ).exists():
+            title_id = self.context['request'].parser_context['kwargs']['title_id']
+            author = request.user
+            if Review.objects.filter(author=author, title_id=title_id).exists():
                 raise serializers.ValidationError(
                     'Вы уже оставили отзыв на это произведение.'
                 )
@@ -138,19 +136,11 @@ class UserSerializer(serializers.ModelSerializer):
             'username', 'email', 'first_name',
             'last_name', 'bio', 'role'
         )
-        extra_kwargs = {
-            'email': {'required': True},
-        }
 
     def validate_role(self, value):
         if value not in dict(UserRole.choices):
             raise serializers.ValidationError("Недопустимая роль")
         return value
-
-
-class UserProfileSerializer(UserSerializer):
-    class Meta(UserSerializer.Meta):
-        read_only_fields = ('role',)
 
 
 class CategorySerializer(serializers.ModelSerializer):

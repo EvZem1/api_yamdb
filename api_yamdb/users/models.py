@@ -1,7 +1,9 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from api_yamdb.constants import LIMIT_EMAIL
+from api_yamdb import constants
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from .validators import validate_username_not_me
 
 
 class UserRole(models.TextChoices):
@@ -11,10 +13,23 @@ class UserRole(models.TextChoices):
 
 
 class User(AbstractUser):
-    email = models.EmailField(
-        max_length=LIMIT_EMAIL,
+    username_validator = UnicodeUsernameValidator()
+    username = models.CharField(
+        'username',
+        max_length=constants.LIMIT_USERNAME,
         unique=True,
-        blank=False,
+        help_text=(
+            'Обязательное поле. Не более 150 символов. '
+            'Только буквы, цифры и @/./+/-/_.'
+        ),
+        validators=[username_validator, validate_username_not_me],
+        error_messages={
+            'unique': "Пользователь с таким именем уже существует.",
+        },
+    )
+    email = models.EmailField(
+        max_length=constants.LIMIT_EMAIL,
+        unique=True,
         null=False,
         verbose_name='Адрес электронной почты'
     )
@@ -23,17 +38,10 @@ class User(AbstractUser):
         verbose_name='О себе'
     )
     role = models.CharField(
-        max_length=20,
+        max_length=constants.LIMIT_ROLE_LENGTH,
         choices=UserRole.choices,
         default=UserRole.USER,
         verbose_name='Роль'
-    )
-    confirmation_code = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Код подтверждения',
-        editable=False
     )
 
     REQUIRED_FIELDS = ['email']

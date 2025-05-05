@@ -1,7 +1,6 @@
 from django.db import models
 
 from api.validators import validate_score_range
-
 from api_yamdb.constants import MAX_TEXT_LENGTH
 from titles.models import Title
 from users.models import User
@@ -18,7 +17,8 @@ class AbstractReviewComment(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        editable=False
+        editable=False,
+        related_name='%(class)ss'
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',
@@ -75,6 +75,6 @@ class Comment(AbstractReviewComment):
         on_delete=models.CASCADE
     )
 
-    class Meta(AbstractReviewComment.Meta):
+    class Meta(AbstractReviewComment.Meta):  # Тут наследую Meta от base class
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
