@@ -1,15 +1,15 @@
+from api.validators import validate_score_range, validate_year
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.core.validators import RegexValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-
-from api.validators import validate_score_range, validate_year
-from api_yamdb import constants
 from reviews.models import Comment, Review
 from titles.models import Category, Genre, Title
 from users.models import User, UserRole
+
+from api_yamdb import constants
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -27,18 +27,24 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         request = self.context['request']
-        title_id = (
-            self.context['request'].parser_context['kwargs']['title_id']
-        )
+        author = request.user
 
         if request.method == 'POST':
-            author = request.user
+            title_id = (
+                self.context['request'].parser_context['kwargs'].get('title_id')
+            )
+            if title_id is None:
+                raise serializers.ValidationError(
+                     'Не удалось определить Title ID из URL.'
+                 )
+
             if Review.objects.filter(
                 author=author, title_id=title_id
             ).exists():
                 raise serializers.ValidationError(
-                    'Вы уже оставили отзыв на это произведение.'
+                    ('Вы уже оставили отзыв на это произведение.')
                 )
+
         return data
 
 

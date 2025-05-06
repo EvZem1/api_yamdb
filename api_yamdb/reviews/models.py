@@ -1,9 +1,9 @@
-from django.db import models
-
 from api.validators import validate_score_range
-from api_yamdb.constants import MAX_TEXT_LENGTH
+from django.db import models
 from titles.models import Title
 from users.models import User
+
+from api_yamdb.constants import MAX_TEXT_LENGTH
 
 
 class AbstractReviewComment(models.Model):

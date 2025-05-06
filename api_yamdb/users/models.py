@@ -1,8 +1,9 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
 from api_yamdb import constants
-from django.contrib.auth.validators import UnicodeUsernameValidator
+
 from .validators import validate_username_not_me
 
 
@@ -19,7 +20,7 @@ class User(AbstractUser):
         max_length=constants.LIMIT_USERNAME,
         unique=True,
         help_text=(
-            'Обязательное поле. Не более 150 символов. '
+            f'Обязательное поле. Не более {constants.LIMIT_USERNAME} символов. '
             'Только буквы, цифры и @/./+/-/_.'
         ),
         validators=[username_validator, validate_username_not_me],
@@ -51,6 +52,9 @@ class User(AbstractUser):
         verbose_name_plural = 'Пользователи'
         ordering = ['username']
 
+    def __str__(self):
+        return self.username
+
     @property
     def is_admin(self):
         return self.role == UserRole.ADMIN or self.is_superuser
@@ -58,6 +62,3 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == UserRole.MODERATOR
-
-    def __str__(self):
-        return self.username

@@ -11,19 +11,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken
-
 from reviews.models import Review
 from titles.models import Category, Genre, Title
 from users.models import User
-from .permissions import (IsAdmin, IsAdminOrReadOnly,
-                          IsAuthorModeratorAdminOrReadOnly)
 
 from .filters import TitleFilter
-from .serializers import (
-    CategorySerializer, CommentSerializer, GenreSerializer, ReviewSerializer,
-    SignUpSerializer, TitleGETSerializer, TitleSerializer, TokenSerializer,
-    UserSerializer
-)
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          IsAuthorModeratorAdminOrReadOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GenreSerializer, ReviewSerializer, SignUpSerializer,
+                          TitleGETSerializer, TitleSerializer, TokenSerializer,
+                          UserSerializer)
 
 
 class CreateListDestroyViewSet(mixins.CreateModelMixin,
