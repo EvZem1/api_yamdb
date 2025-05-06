@@ -20,8 +20,8 @@ class User(AbstractUser):
         max_length=constants.LIMIT_USERNAME,
         unique=True,
         help_text=(
-            f'Обязательное поле. Не более {constants.LIMIT_USERNAME} символов. '
-            'Только буквы, цифры и @/./+/-/_.'
+            f'Обязательное поле. Не более {constants.LIMIT_USERNAME} '
+            'символов. Только буквы, цифры и @/./+/-/_.'
         ),
         validators=[username_validator, validate_username_not_me],
         error_messages={

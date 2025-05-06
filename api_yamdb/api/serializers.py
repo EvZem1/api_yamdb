@@ -31,12 +31,13 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         if request.method == 'POST':
             title_id = (
-                self.context['request'].parser_context['kwargs'].get('title_id')
+                self.context['request'].parser_context['kwargs']
+                .get('title_id')
             )
             if title_id is None:
                 raise serializers.ValidationError(
-                     'Не удалось определить Title ID из URL.'
-                 )
+                    'Не удалось определить Title ID из URL.'
+                )
 
             if Review.objects.filter(
                 author=author, title_id=title_id
