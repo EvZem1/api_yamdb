@@ -3,7 +3,6 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from api_yamdb.constants import MAX_TEXT_LENGTH
-
 from .models import Comment, Review
 
 

@@ -3,7 +3,6 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 
 from api_yamdb import constants
-
 from .validators import validate_username_not_me
 
 
